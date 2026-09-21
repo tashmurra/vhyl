@@ -2,13 +2,13 @@
 from pathlib import Path
 import re
 import sys
-from support import ROOT, run
+from support import ROOT, native_executable, run
 sys.path.insert(0, str(ROOT/'examples/dialogue'))
 from host import Session
 
 
 def consumer(bundle, text):
-    return run([bundle/'consumer'], cwd=bundle, input=text, timeout=60).stdout
+    return run([native_executable(bundle, 'consumer')], cwd=bundle, input=text, timeout=60).stdout
 
 
 def states(text):

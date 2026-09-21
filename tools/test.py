@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check sources and host utilities; --native also executes the native behaviour suite."""
 import argparse
-import os
+import platform
 from pathlib import Path
 import shutil
 import sys
@@ -44,7 +44,7 @@ def main():
             scenarios.test(build)
             following.test(build)
             dialogue.test(build)
-            print('Native suite passed on '+os.uname().machine, flush=True)
+            print(f'Native suite passed on {platform.system()} {platform.machine()}', flush=True)
         print('All requested checks passed', flush=True)
     except BaseException:
         print(f'Check output retained at {out}', file=sys.stderr)

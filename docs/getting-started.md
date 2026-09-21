@@ -18,4 +18,4 @@ printf '!10\n!11\n' | ./build/structured/consumer
 
 Codes 10 and 11 request north and south. The player visits the Platform and returns to the Station. Entity-taking actions additionally need handles obtained from the bundle's inspection interface, not declaration indexes guessed by the host.
 
-The shell examples use a Unix shell. Compiler and consumer executables on Windows use their platform-specific names; the native test harness currently runs on macOS. Do not infer a tested platform from the portability of the library's source.
+The shell examples use a Unix shell. Windows compiler and consumer executables use `.exe` names, such as `consumer.exe`. The native test harness supports macOS Intel/Apple Silicon, Linux x86-64 and Windows x86-64 with their required native toolchains. macOS bundles are universal; each test run executes the current host slice. Do not infer execution coverage on another platform from a successful build.
