@@ -1,5 +1,10 @@
 name: Library checks
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
 permissions:
   contents: read
 jobs:
@@ -7,7 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2025, macos-15-intel, macos-15]
+        # Exercise Intel on manual/release runs; routine native checks use Apple Silicon.
+        os: ${{ fromJSON((github.event_name == 'workflow_dispatch' || github.event_name == 'release') && '["ubuntu-24.04", "windows-2025", "macos-15", "macos-15-intel"]' || '["ubuntu-24.04", "windows-2025", "macos-15"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     steps:

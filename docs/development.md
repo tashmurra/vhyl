@@ -12,4 +12,4 @@ Keep documentation with its API changes, and make examples executable in tests. 
 
 Before a release, test a fresh source export with an empty output/cache directory, review links and the file inventory, and run a local secret scanner. Do not commit build logs, evidence, local tool fingerprints, private story data or historical planning material.
 
-CI source jobs cover Linux, Windows and macOS; native jobs cover both macOS architectures. Local Intel execution does not validate Apple Silicon, other operating systems or a minimum OS version. No CI execution is claimed solely because the workflow exists.
+Push and pull-request CI source jobs cover Linux, Windows and macOS; routine native checks run on Apple Silicon. Manual workflow runs and published releases add Intel macOS coverage. Run the Library checks workflow manually against the relevant branch or tag when updating the compiler pin and before a release, so both macOS architectures are checked. Local Intel execution does not validate Apple Silicon, other operating systems or a minimum OS version. No CI execution is claimed solely because the workflow exists.
