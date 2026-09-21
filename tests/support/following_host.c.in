@@ -1,0 +1,62 @@
+/* Independent test host. All declarations come from the built header; names
+ * and ABI are substituted from manifest.json. No access to runtime internals. */
+#include "zeb_game.h"
+#include <inttypes.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define SLOT UINT64_C(1)
+static void *worker(void *ignored) {
+    (void)ignored;
+    uint64_t out = @symbol@(@abi@, SLOT, 20000, 200000, 8388608);
+    @symbol@_finish(SLOT, out);
+    return NULL;
+}
+static void show(void) {
+    printf("RESULT");
+    for (uint64_t i = 0; i < @symbol@_result_len(SLOT); ++i)
+        printf(" %" PRIu64, @symbol@_result(SLOT, i));
+    printf("\nEVENT");
+    for (uint64_t i = 0; i < @symbol@_event_len(SLOT); i += 8)
+        printf(" %" PRIu64, @symbol@_event_word(SLOT, i));
+    printf("\nTEXT ");
+    for (uint64_t i = 0; i < @symbol@_output_len(SLOT); ++i)
+        printf("%02x", @symbol@_output_byte(SLOT, i));
+    printf("\nEND\n");
+    @symbol@_drained(SLOT);
+    fflush(stdout);
+}
+int main(void) {
+    if (@symbol@_reset(SLOT)) return 1;
+    /* Bind every published declaration at the initial safe boundary. */
+    if (@symbol@_inspect(SLOT, 7, @presentation@, @range@)) return 2;
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, worker, NULL)) return 3;
+    if (@symbol@_poll(SLOT) != 0) return 4;
+    show();
+    char line[1024];
+    while (fgets(line, sizeof line, stdin)) {
+        unsigned kind; unsigned long long a, b;
+        char *command = strchr(line, '|');
+        if (!command || sscanf(line, "%u %llu %llu", &kind, &a, &b) != 3) return 5;
+        *command++ = 0;
+        command[strcspn(command, "\r\n")] = 0;
+        if (@symbol@_inspect(SLOT, kind, a, b)) return 6;
+        if (command[0] == '!') {
+            if (@symbol@_reply_action(SLOT, (uint32_t)strtoul(command + 1, NULL, 10))) return 7;
+        } else {
+            for (char *p = command; *p; ++p)
+                if (@symbol@_reply_byte(SLOT, (unsigned char)*p)) return 8;
+        }
+        if (@symbol@_resume(SLOT)) return 9;
+        if (@symbol@_poll(SLOT) != 0) return 10;
+        show();
+    }
+    @symbol@_close(SLOT);
+    if (@symbol@_poll(SLOT) != 2) return 11;
+    pthread_join(thread, NULL);
+    uint64_t outcome = @symbol@_outcome(SLOT);
+    @symbol@_discard(SLOT);
+    return outcome == 0 ? 0 : 12;
+}

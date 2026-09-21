@@ -1,0 +1,56 @@
+name: Library checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15-intel, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Read compiler pin
+        id: compiler
+        shell: bash
+        run: |
+          python -c 'import json,os; p=json.load(open("compiler.json")); f=open(os.environ["GITHUB_OUTPUT"],"a"); print("revision="+p["revision"],file=f)'
+      - uses: actions/checkout@v4
+        with:
+          repository: tashmurra/zebulon-lang
+          ref: ${{ steps.compiler.outputs.revision }}
+          path: .tools/zebulon
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.98.1 --profile minimal
+      - name: Build compiler
+        working-directory: .tools/zebulon
+        run: cargo +1.98.1 build --locked --release -p zebc
+      - name: Select compiler
+        shell: bash
+        run: |
+          python -c 'import os,pathlib; p=pathlib.Path(".tools/zebulon/target/release")/("zebc.exe" if os.name=="nt" else "zebc"); f=open(os.environ["GITHUB_ENV"],"a"); print("ZEBC="+str(p.resolve()),file=f)'
+      - name: Source and protocol checks
+        run: |
+          python -X utf8 tools/test.py
+          python -X utf8 tools/check_repository.py
+      - name: Install native Rust libraries
+        if: runner.os == 'macOS'
+        run: rustup target add --toolchain 1.98.1 x86_64-apple-darwin aarch64-apple-darwin
+      - name: Provision native LLVM
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          python .tools/zebulon/tools/bootstrap_llvm.py "$RUNNER_TEMP/vhyl-llvm" --config-out "$RUNNER_TEMP/vhyl-llvm.json"
+          python -c 'import json,os; p=json.load(open(os.path.join(os.environ["RUNNER_TEMP"],"vhyl-llvm.json"))); f=open(os.environ["GITHUB_ENV"],"a"); print("ZEB_LLVM_CONFIG="+p["llvm_config"],file=f)'
+          echo "ZEB_RUSTC=$(rustup which --toolchain 1.98.1 rustc)" >> "$GITHUB_ENV"
+      - name: Native behaviour checks
+        if: runner.os == 'macOS'
+        run: python tools/test.py --native
