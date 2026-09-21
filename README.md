@@ -49,7 +49,7 @@ python3 tools/check_repository.py
 
 Select a compiler with `python3 tools/test.py --zebc /path/to/zebc`, or `ZEBC`. An invalid explicit setting fails rather than falling back. Source checking does not require LLVM.
 
-On Intel or Apple Silicon macOS with the pinned compiler's native prerequisites:
+On macOS (Intel or Apple Silicon), Linux x86-64 or Windows x86-64 with the pinned compiler's native prerequisites:
 
 ```sh
 python3 tools/test.py --native
@@ -57,7 +57,9 @@ python3 tools/test.py --native
 
 This runs real native behaviour checks and fails if prerequisites are missing. Use `--out build/checks` to retain bundles and logs in a new directory. Temporary output is removed on success and retained on failure otherwise.
 
-The library is intended for multiple platforms. Push and pull-request CI runs source checks on Linux, Windows and macOS, with native checks on Apple Silicon. Manual workflow runs and published releases also run Intel macOS checks. Use a manual run for compiler-pin updates and before releases. Local native execution has been checked on Intel macOS; Apple Silicon and hosted CI execution remain unverified. This test harness's native mode currently requires macOS, independently of the compiler's other targets.
+Windows native checks require an x64 Visual Studio developer environment and Windows SDK; use `python` if `python3` is unavailable. Linux requires its host C/C++ development toolchain. All platforms require the pinned LLVM and Rust versions; macOS also needs its SDK and both Rust target libraries. See [Development](docs/development.md) for setup.
+
+The Library checks workflow is manual-only: in GitHub Actions, select **Library checks → Run workflow**, then choose the branch or tag. It runs source and native behaviour checks on Linux x86-64, Windows x86-64 and macOS. macOS builds are universal; the Apple Silicon runner executes the ARM slice. Pushes, pull requests and releases do not start jobs automatically. Run checks for compiler-pin updates and before releases. Local native execution has been checked on Intel macOS; successful native CI runs are needed to establish execution coverage on the other runners.
 
 ## Licence
 

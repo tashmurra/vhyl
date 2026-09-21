@@ -1,11 +1,8 @@
 """Actor parties, travel, scope, rollback and inspection through the public ABI."""
 import json
-import os
-import select
 import struct
-import subprocess
 import time
-from support import ROOT
+from support import ROOT, LineProcess, native_executable
 
 def records(words):
     assert words[:2] == [1, 0], words[:3]
@@ -22,32 +19,24 @@ def records(words):
 
 class Host:
     def __init__(self, folder):
-        self.manifest = json.loads((folder/'manifest.json').read_text())
+        self.manifest = json.loads((folder/'manifest.json').read_text(encoding='utf-8'))
         self.props = self.manifest['properties']
         self.index = {e['name']: e['index'] for e in self.manifest['entities']}
         self.contains = next(r['index'] for r in self.manifest['relations'] if r['forward'] == 'contains')
         self.connected = next(r['index'] for r in self.manifest['relations'] if r['forward'] == 'connects')
-        self.proc = subprocess.Popen([str(folder/'following-host')], cwd=folder,
-                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.buffer = b''
+        self.process = LineProcess([native_executable(folder, 'following-host')], cwd=folder)
         self.transcript = []
-        first = self.read()
-        self.handles = {row[0]: row[1] for row in records(first['result'])}
-        self.named = {name: self.handles[index] for name, index in self.index.items()}
-        self.names = {value: key for key, value in self.named.items()}
+        try:
+            first = self.read()
+            self.handles = {row[0]: row[1] for row in records(first['result'])}
+            self.named = {name: self.handles[index] for name, index in self.index.items()}
+            self.names = {value: key for key, value in self.named.items()}
+        except BaseException:
+            self.process.close(terminate=True)
+            raise
 
     def read(self):
-        deadline = time.monotonic() + 30
-        while b'\nEND\n' not in self.buffer:
-            left = deadline-time.monotonic()
-            if left <= 0 or not select.select([self.proc.stdout], [], [], left)[0]:
-                raise AssertionError('native host timed out')
-            part = os.read(self.proc.stdout.fileno(), 65536)
-            if not part:
-                raise AssertionError(f'host stopped: {self.proc.poll()} {self.proc.stderr.read().decode()}')
-            self.buffer += part
-        raw, self.buffer = self.buffer.split(b'\nEND\n', 1)
-        lines = raw.decode().splitlines()
+        lines = self.process.read_until('END')
         result = [int(x) for x in next(l for l in lines if l.startswith('RESULT')).split()[1:]]
         words = [int(x) for x in next(l for l in lines if l.startswith('EVENT')).split()[1:]]
         events = []
@@ -67,7 +56,7 @@ class Host:
         return frame
 
     def query(self, kind, a, b, command):
-        self.proc.stdin.write(f'{kind} {a} {b}|{command}\n'.encode()); self.proc.stdin.flush()
+        self.process.send(f'{kind} {a} {b}|{command}')
         return self.read()
 
     def scene(self, command, room):
@@ -85,14 +74,7 @@ class Host:
         return frame
 
     def close(self):
-        self.proc.stdin.close()
-        try:
-            code = self.proc.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            self.proc.kill()
-            self.proc.wait(timeout=5)
-            raise
-        assert code == 0, (code, self.proc.stderr.read().decode())
+        self.process.close()
 
 
 def placed(frame, names, room):

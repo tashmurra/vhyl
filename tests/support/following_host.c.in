@@ -1,17 +1,29 @@
 /* Independent test host. All declarations come from the built header; names
  * and ABI are substituted from manifest.json. No access to runtime internals. */
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include "zeb_game.h"
 #include <inttypes.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <process.h>
+#else
 #include <pthread.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #define SLOT UINT64_C(1)
+#ifdef _WIN32
+static unsigned __stdcall worker(void *ignored) {
+#else
 static void *worker(void *ignored) {
+#endif
     (void)ignored;
     uint64_t out = @symbol@(@abi@, SLOT, 20000, 200000, 8388608);
     @symbol@_finish(SLOT, out);
-    return NULL;
+    return 0;
 }
 static void show(void) {
     printf("RESULT");
@@ -31,8 +43,13 @@ int main(void) {
     if (@symbol@_reset(SLOT)) return 1;
     /* Bind every published declaration at the initial safe boundary. */
     if (@symbol@_inspect(SLOT, 7, @presentation@, @range@)) return 2;
+#ifdef _WIN32
+    HANDLE thread = (HANDLE)_beginthreadex(NULL, 0, worker, NULL, 0, NULL);
+    if (!thread) return 3;
+#else
     pthread_t thread;
     if (pthread_create(&thread, NULL, worker, NULL)) return 3;
+#endif
     if (@symbol@_poll(SLOT) != 0) return 4;
     show();
     char line[1024];
@@ -55,7 +72,12 @@ int main(void) {
     }
     @symbol@_close(SLOT);
     if (@symbol@_poll(SLOT) != 2) return 11;
-    pthread_join(thread, NULL);
+#ifdef _WIN32
+    if (WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0) return 13;
+    if (!CloseHandle(thread)) return 14;
+#else
+    if (pthread_join(thread, NULL)) return 13;
+#endif
     uint64_t outcome = @symbol@_outcome(SLOT);
     @symbol@_discard(SLOT);
     return outcome == 0 ? 0 : 12;
