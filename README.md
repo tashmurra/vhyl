@@ -57,7 +57,7 @@ python3 tools/test.py --native
 
 This runs real native behaviour checks and fails if prerequisites are missing. Use `--out build/checks` to retain bundles and logs in a new directory. Temporary output is removed on success and retained on failure otherwise.
 
-The library is intended for multiple platforms. CI prepares source checks on Linux, Windows and macOS, and native checks on both macOS architectures. Local native execution has been checked on Intel macOS; Apple Silicon and hosted CI execution remain unverified. This test harness's native mode currently requires macOS, independently of the compiler's other targets.
+The library is intended for multiple platforms. Push and pull-request CI runs source checks on Linux, Windows and macOS, with native checks on Apple Silicon. Manual workflow runs and published releases also run Intel macOS checks. Use a manual run for compiler-pin updates and before releases. Local native execution has been checked on Intel macOS; Apple Silicon and hosted CI execution remain unverified. This test harness's native mode currently requires macOS, independently of the compiler's other targets.
 
 ## Licence
 
