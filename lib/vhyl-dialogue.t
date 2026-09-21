@@ -6,9 +6,13 @@ class DialogueError: object;
 relation dialogueActive(controller: Entity, conversation: Entity) one_to_one;
 relation dialogueAsker(controller: Entity, asker: Entity) one_to_one;
 relation dialogueUsed(asker: Entity, choice: Entity) many_to_many;
+/** @api author
+ * Binds a private speaker to its owner; voiceOwner is the inverse. */
 relation dialogueVoice(owner: Entity, voice: Entity) one_to_many reverse voiceOwner;
 
 /* Not an Actor or Thing: never a physical or social target. */
+/** @api author
+ * A private conversational voice bound to its asker through voiceOwner. */
 class InternalSpeaker: object
     knowsAbout(subject)
     {
@@ -17,20 +21,40 @@ class InternalSpeaker: object
     }
 ;
 
+/** @api author
+ * The asker and active conversation passed to choice hooks. */
 class DialogueContext: object
     asker = nil
     conversation = nil
 ;
 
+/** @api author
+ * A host-driven choice conversation with a stable id and target. */
 class Conversation: object
+    /** @api author
+     * Stable nonempty identifier sent by a host to begin the conversation. */
     id = nil
+    /** @api author
+     * Actor or private speaker offering the conversation. */
     target = nil
+    /** @api author
+     * Authored DialogueChoice objects offered to the asker. */
     choices = []
+    /** @api author
+     * Whether this conversation can currently be opened or continued. */
     isActive = true
+    /** @api author
+     * Observational eligibility test for this asker. */
     availableTo(asker) { return true; }
+    /** @api author
+     * Run after an accepted begin request. */
     opening(c) { return nil; }
+    /** @api author
+     * Run when the goodbye choice closes this conversation. */
     closing(c) { return nil; }
 /* Range is policy; a radio conversation may override this method. */
+    /** @api author
+     * Decide whether the active conversation remains available to an asker. */
     canContinue(asker)
     {
         if (target == nil || !isActive || !availableTo(asker)) return nil;
@@ -40,16 +64,36 @@ class Conversation: object
     }
 ;
 
+/** @api author
+ * A selectable conversation option with stable identity and availability rules. */
 class DialogueChoice: object
+    /** @api author
+     * Stable choice identifier sent by the host on selection. */
     id = nil
+    /** @api author
+     * Message id used to display the choice label. */
     labelId = nil
+    /** @api author
+     * Subject that the asker must know before this choice appears. */
     subject = nil
+    /** @api author
+     * Fact tags required in the asker's knowledge. */
     requiresKnowledge = []
+    /** @api author
+     * Consume this choice separately for each asker after selection. */
     once = nil
+    /** @api author
+     * Whether this choice is currently eligible. */
     isActive = true
 /* A private option is available only to this voice's bound character. */
+    /** @api author
+     * Private speaker whose owner alone may see this choice. */
     voice = nil
+    /** @api author
+     * Observational condition evaluated while producing choices. */
     available(c) { return true; }
+    /** @api author
+     * Handle an accepted selection and any resulting world mutation. */
     selected(c) { return nil; }
     eligible(c)
     {
@@ -64,7 +108,11 @@ class DialogueChoice: object
 
 /* Explicit opt-in adapter; the entry retains its existing once/used semantics.
  * Use DialogueChoice.once for per-asker consumption instead. */
+/** @api author
+ * Explicitly adapts a TopicEntry into a choice conversation. */
 class TopicDialogueChoice: DialogueChoice
+    /** @api author
+     * TopicEntry adapted by this choice. */
     entry = nil
     eligible(c)
     {
@@ -130,6 +178,8 @@ dialogueEnd(reason)
     return nil;
 }
 
+/** @api author
+ * Standard choice that closes a conversation. */
 class GoodbyeChoice: DialogueChoice
     id ='goodbye'
     labelId ='dialogue.goodbye'

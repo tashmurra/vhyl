@@ -14,10 +14,18 @@ property noun, adjective;
  * either side; travel is a labelled family, one table per direction; vocabulary
  * lives in the dictionary.
  */
+/** @api author
+ * Places an item in one container; read the inverse through location. */
 relation contains(container: Entity, item: Entity) one_to_many reverse location;
+/** @api author
+ * Connects rooms by a direction for travel. */
 relation exits(from: Entity, to: Entity, way: Direction) one_to_one;
+/** @api author
+ * Assigns noun and adjective words to an entity. */
 relation vocab(entity: Entity, word: Text, part: Vocabulary) many_to_many;
 
+/** @api author
+ * Associates a door with every room from which it can be used. */
 relation connects(door: Entity, room: Entity) many_to_many;
 
 /*
@@ -26,10 +34,16 @@ relation connects(door: Entity, room: Entity) many_to_many;
  * a stretch of river is in several rooms at once and is not contained by any of
  * them, so it gets a table of its own rather than bending the containment one.
  */
+/** @api author
+ * Places a MultiLoc in several rooms without changing containment. */
 relation presentIn(thing: Entity, room: Entity) many_to_many;
 
+/** @api author
+ * Records explicit knowledge of another entity. */
 relation knows(knower: Entity, subject: Entity) many_to_many;
 
+/** @api author
+ * Records attachment between two entities. */
 relation attachedTo(one: Entity, other: Entity) many_to_many;
 
 + property location;
