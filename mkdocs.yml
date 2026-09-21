@@ -1,0 +1,26 @@
+site_name: vhyl Library Reference
+site_url: https://tashmurra.github.io/vhyl/
+repo_url: https://github.com/tashmurra/vhyl
+docs_dir: build/docs-src
+site_dir: build/site
+theme:
+  name: readthedocs
+plugins:
+  - search
+markdown_extensions:
+  - tables
+  - fenced_code
+  - toc:
+      permalink: true
+nav:
+  - Documentation: README.md
+  - Getting started: getting-started.md
+  - World model: world-model.md
+  - Actions: actions.md
+  - Actors and dialogue: actors-and-dialogue.md
+  - Localisation: localisation.md
+  - Host integration: host-integration.md
+  - API overview: api/README.md
+  - Library reference: reference/README.md
+  - Development: development.md
+  - Provenance: provenance.md

@@ -8,6 +8,7 @@ These guides describe the library shipped with this repository. Documentation, f
 - [Actors and dialogue](actors-and-dialogue.md): behaviour and host-driven conversations.
 - [Localisation](localisation.md): messages, prose and parser limitations.
 - [Host integration](host-integration.md): identities, action codes and events.
-- [API reference](api/README.md): author settings, maintained state and extension hooks.
+- [API overview](api/README.md): author settings, maintained state and extension hooks.
+- [Library reference](reference/README.md): searchable class, member and symbol pages generated from source.
 - [Development](development.md): compiler pin, checks and contributions.
 - [Provenance](provenance.md): authorship and included material.

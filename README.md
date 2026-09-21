@@ -27,6 +27,8 @@ Try `look`, `take gauge`, `put gauge in case`, `take weight`, `ask attendant abo
 
 See [Getting started](docs/getting-started.md) for the include order and entry points. The [documentation index](docs/README.md) links the authoring guides and API reference.
 
+For a local searchable programmer reference, install `requirements-docs.txt` and run `python3 tools/build_docs.py`; open `build/site/index.html`.
+
 ## Hosts and conversations
 
 `examples/structured/main.t` exposes only structured actions. `examples/dialogue/main.t` exposes a small choice-driven conversation with a Python host:

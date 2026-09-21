@@ -9,49 +9,91 @@
  * visible, how a room is described, and the verbs that move things about.
  */
 
+/** @api author
+ * Base entity for physical and describable things in the adventure world. */
 class Thing: object
 
+    /** @api author
+     * Properties exposed to structured hosts for entity presentation. */
     presentation = [&name, &isOpen, &isOpenable, &isContainer, &isLit,
                     &isLightSource, &isFixed, &isDecoration, &isTransparent,
                     &isHidden, &bulk, &bulkCapacity, &objPos]
+    /** @api author
+     * Display name used by library messages and room descriptions. */
     name = nil
 /* A container holds things, and holds them shut when it can be closed. */
+    /** @api author
+     * Whether the thing can hold contained entities. */
     isContainer = nil
+    /** @api author
+     * Whether open and close actions may change this thing's state. */
     isOpenable = nil
+    /** @api author
+     * Current open state; defaults to open for non-openable things. */
     isOpen = true
 /* Fixed things stay where they are: scenery, fittings, rooms. */
+    /** @api author
+     * Prevent taking or moving this thing. */
     isFixed = nil
 /* Described in the room, or passed over as part of the furniture. */
+    /** @api author
+     * Mark scenery that is normally omitted from the room listing. */
     isDecoration = nil
 
+    /** @api author
+     * Description emitted when the thing is examined. */
     desc = nil
 /* Gives light when it is lit. A candle is a light source unlit. */
+    /** @api author
+     * Whether this thing can provide light when lit. */
     isLightSource = nil
+    /** @api author
+     * Current light state. */
     isLit = nil
 
+    /** @api author
+     * Return a candidate rank for this thing in the given action and role. */
     rank(a, role) { return isDecoration ? rankUnlikely : rankLogical; }
 
     cannotTakeMsg = nil
     cannotOpenMsg = nil
 
+    /** @api author
+     * Space this thing occupies in a container. */
     bulk = 1
+    /** @api author
+     * Total bulk this thing can hold when used as a container. */
     bulkCapacity = 0
 /* Whether what is inside is mentioned when the room is described. */
+    /** @api author
+     * Whether contents appear in a room description. */
     contentsListed = true
 /* The largest single thing that fits, whatever room is left. */
+    /** @api author
+     * Maximum bulk of one item accepted by this container. */
     maxSingleBulk = 0
 /* Seen into while shut. */
+    /** @api author
+     * Allow sight into this thing while closed. */
     isTransparent = nil
 
     isAttachable = nil
+    /** @api author
+     * Whether locking actions apply to this thing. */
     isLockable = nil
+    /** @api author
+     * Current locked state. */
     isLocked = nil
 /*
      * Being worn. On Thing rather than on Wearable for the same reason locking
      * is: a precondition has to be able to ask it of anything it is given.
      */
+    /** @api author
+     * Current worn state used by clothing actions and preconditions. */
     isWorn = nil
 /* What unlocks it. nil on a lockable thing means nothing does. */
+    /** @api author
+     * Item that unlocks this thing, or nil when no key does. */
     keyItem = nil
 
     isDistant = nil
@@ -75,6 +117,8 @@ class Thing: object
 
     isFamiliar = nil
 
+    /** @api author
+     * Test whether this knower knows an entity or fact tag. */
     knowsAbout(obj)
     {
         if (obj == nil)
@@ -85,6 +129,8 @@ class Thing: object
         return obj.isFamiliar || knows.contains(self, obj);
     }
 
+    /** @api author
+     * Record knowledge of an entity or fact tag for this knower. */
     setKnowsAbout(obj)
     {
         if (obj == nil)
@@ -99,6 +145,8 @@ class Thing: object
         return nil;
     }
 /* Forget a fact tag. Things are not forgotten; a fact can be superseded. */
+    /** @api author
+     * Remove a fact tag from this knower; entity knowledge remains. */
     forget(tag)
     {
         local kept = [];
@@ -113,6 +161,8 @@ class Thing: object
 
     informedOf = []
 
+    /** @api author
+     * Subjects taught to this thing during vhylStart. */
     initiallyKnowsAbout = nil
 
     known = (player.knowsAbout(self))
@@ -122,6 +172,8 @@ class Thing: object
      * the player said *the you*. What an article is doing there is the language
      * module's business; **whether the name takes one** is the world's.
      */
+    /** @api author
+     * Use a proper name without an article in English presentation. */
     isProper = nil
 
     isPlural = nil
@@ -146,6 +198,8 @@ class Thing: object
      * Where a thing put here comes to rest. An enumerator, not a preposition:
      * the word for it belongs to the language module.
      */
+    /** @api author
+     * Position assigned to an item inserted here: in, on, under or behind. */
     objPos = posIn
 
     remapIn = nil
@@ -154,18 +208,32 @@ class Thing: object
 
     remapUnder = nil
 /* Out of sight until someone finds it. */
+    /** @api author
+     * Omit this thing from sight until revealed by an action. */
     isHidden = nil
 
+    /** @api author
+     * Observe an item being inserted after placement changes. */
     notifyInsert(item) { return nil; }
 
+    /** @api author
+     * Return nil to allow an action or text explaining a refusal. */
     refuses(action, c) { return nil; }
 
+    /** @api author
+     * Return preconditions for this object in the action and role. */
     preCond(a, role) { return []; }
 
+    /** @api author
+     * React before the traveller uses a connector. */
     beforeTravel(traveller, conn) { return nil; }
+    /** @api author
+     * React after a traveller uses a connector. */
     afterTravel(traveller, conn) { return nil; }
 ;
 
+/** @api author
+ * A lit-by-default location whose exits and contents are relation rows. */
 class Room: Thing
     isFixed = true
 /* Lit by itself. A DarkRoom is not, and needs something carried. */
@@ -173,11 +241,15 @@ class Room: Thing
 ;
 
 /* Somewhere the player cannot see without a light. */
+/** @api author
+ * A room that requires another light source to be visible. */
 class DarkRoom: Room
     isLit = nil
 ;
 
 /* Outdoors: lit by the sky rather than by anything carried. */
+/** @api author
+ * A room lit by the sky under the default world policy. */
 class OutdoorRoom: Room
     isLit = true
 ;
@@ -193,19 +265,31 @@ OutdoorRoom template'name';
  * answered *I don't understand that* in every game ever written against vhyl,
  * and looking at yourself is the first thing a good many players do.
  */
+/** @api author
+ * The library player entity; place it by setting gameMain.initialRoom. */
 player: Thing'you'
     travelCycle = -1
     vocab ='me; my; myself self you'
 ;
 
+/** @api author
+ * Per-game startup settings supplied by a modify gameMain declaration. */
 gameMain: object
+    /** @api author
+     * Room where the player is placed by vhylStart. */
     initialRoom = nil
 /* Displayed once at the start. An emitting string, like desc. */
+    /** @api author
+     * Text emitted once before the first room description. */
     intro =""
 
+    /** @api author
+     * Select past tense for English presentation. */
     usePastTense = nil
 ;
 
+/** @api host
+ * Initialise the world once, place the player and describe the initial room. */
 vhylStart()
 {
 /* An emitting property displays when it is read; interpolating it would
@@ -308,6 +392,8 @@ wayFrom(from, to)
 
 /* ---------------------------------------------------------------- queries */
 
+/** @api author
+ * Return the room containing the player. */
 here()
 {
     return contains.outermost(player);
@@ -526,14 +612,26 @@ describeRoom()
 
 /* --------------------------------------------------------------- messages */
 
+/** @api author
+ * A message keyed by stable id, with text or a computed say method. */
 class Message: object
+    /** @api author
+     * Stable key used by actions and host presentation. */
     id = nil
 
+    /** @api author
+     * Literal presentation text for this message. */
     text = nil
+    /** @api author
+     * Emit a computed message for the supplied command. */
     say(c) { return nil; }
 /* Higher wins. A game's overrides sit above vhyl's, which are all 0. */
+    /** @api author
+     * Higher-priority active messages replace lower-priority messages with the same id. */
     priority = 0
 /* Answered nil to stand aside: a message set that only applies sometimes. */
+    /** @api author
+     * Observational condition controlling whether this message can be selected. */
     isActive = true
 ;
 
@@ -691,14 +789,24 @@ modify player
 
 /* ------------------------------------------------------------ verb codes */
 
+/** @api host
+ * Maps a stable structured action code to an Action and optional direction. */
 class Verb: object
 /* What the host sends. Stable; a code is never reused for something else. */
+    /** @api host
+     * Stable numeric code submitted by a structured-action host. */
     code = 0
 /* The action it runs. */
+    /** @api author
+     * Action executed for this verb code. */
     action = nil
 /* A direction, for the travel verbs. */
+    /** @api author
+     * Direction supplied to the action for travel verb codes. */
     dir = nil
 /* For the export. Not shown to a player: it is a key, not a word. */
+    /** @api host
+     * Stable key exported for host use; it is not player-visible prose. */
     label = nil
 
     verbPhrase = nil
@@ -824,34 +932,60 @@ vPushWest:   Verb code = 63 action = pushDirAction dir = west  label ='push-west
 
 /* ---------------------------------------------------------------- actions */
 
+/** @api author
+ * Defines argument requirements and the execution and reporting hooks for a command. */
 class Action: object
 /* Whether the turn resolves a direct and an indirect object first. */
+    /** @api author
+     * Whether the command requires a direct entity argument. */
     needsDobj = nil
+    /** @api author
+     * Whether the command requires an indirect entity argument. */
     needsIobj = nil
 
+    /** @api author
+     * Treat the indirect argument as a topic instead of an ordinary thing. */
     iobjIsTopic = nil
 
+    /** @api author
+     * Treat the direct argument as a topic instead of an ordinary thing. */
     dobjIsTopic = nil
 
+    /** @api author
+     * Message id used when the required direct argument is absent. */
     missingDobjMsg ='parse.noref'
+    /** @api author
+     * Message id used when the required indirect argument is absent. */
     missingIobjMsg ='parse.noref'
 /*
      * What the action does. `c` is the command, carrying the resolved dobj and
      * iobj and whatever else the rule captured, so an action that wants a
      * direction or a word reads it there.
      */
+    /** @api author
+     * Perform the action after resolution and preconditions; c holds resolved objects. */
     exec(c) { sayMsg('action.nothing', c);"\n"; return nil; }
 
+    /** @api author
+     * Return an action-specific candidate rank for an argument and role. */
     rank(item, role) { return rankLogical; }
 
+    /** @api author
+     * Require the selected object to be reachable for this action. */
     needsReach = true
 
+    /** @api author
+     * Return the preconditions needed for an argument in its resolved role. */
     preCond(item, role) { return []; }
 
+    /** @api author
+     * Produce the action's report after successful execution. */
     report(c) { return nil; }
 ;
 
 /* The command a rule produces, and what the turn resolves into it. */
+/** @api author
+ * Carries parser captures, resolved arguments and reports through an action. */
 class Command: object
     action = nil
 
@@ -860,7 +994,11 @@ class Command: object
     dobj_ = nil
     iobj_ = nil
 /* What the turn resolved them to. */
+    /** @api author
+     * Resolved direct object, available in action hooks. */
     dobj = nil
+    /** @api author
+     * Resolved indirect object, available in action hooks. */
     iobj = nil
 
     way_ = nil
@@ -2122,6 +2260,8 @@ lookBehindAction: Action
 
 /* ------------------------------------------------------------- connectors */
 
+/** @api author
+ * A traversable entity that can control staging, passage and travel reports. */
 class TravelConnector: Thing
     isFixed = true
 /* Where it leads. A Door works out its own, from the side you are on. */
@@ -2151,19 +2291,31 @@ class TravelConnector: Thing
  * `TravelConnector` with nothing added, which is the honest answer — a passage
  * differs from a door by not shutting, and a Door is the one that adds.
  */
+/** @api author
+ * A travel connector without a door's open and closed state. */
 class Passage: TravelConnector;
 
+/** @api author
+ * A passage whose bulk policy permits a path-like route. */
 class PathPassage: Passage
     bulkLimit = 0
 ;
+/** @api author
+ * A connector representing travel upward. */
 class StairwayUp: TravelConnector;
+/** @api author
+ * A connector representing travel downward. */
 class StairwayDown: TravelConnector;
 
+/** @api author
+ * A travel connector shared by rooms through connects relation rows. */
 class Door: TravelConnector
     isOpenable = true
     isOpen = nil
 ;
 
+/** @api author
+ * A door initially hidden from ordinary observation. */
 class SecretDoor: Door
     isHidden = true
 ;
@@ -2173,6 +2325,8 @@ class SecretDoor: Door
  * travel carries whatever contains the player rather than the player alone —
  * no separate notion of a traveller is needed.
  */
+/** @api author
+ * A boardable thing that can carry an actor through travel. */
 class Vehicle: Thing
     isVehicle = true
 /* You get **on** a bicycle, not in one. */
@@ -2188,6 +2342,8 @@ class Vehicle: Thing
 ;
 
 /* Too heavy to carry, but it can be shoved from room to room. */
+/** @api author
+ * A thing too heavy for ordinary taking. */
 class Heavy: Thing
     isFixed = true
     canPushTravel = nil
@@ -2198,6 +2354,8 @@ class Heavy: Thing
  * room's description; an `Immovable` is a thing in its own right that simply
  * cannot be moved — a safe, an anvil, a fallen beam.
  */
+/** @api author
+ * A thing that cannot be moved by ordinary actions. */
 class Immovable: Thing
     isFixed = true
     canPushTravel = nil
@@ -2209,6 +2367,8 @@ class Immovable: Thing
     }
 ;
 
+/** @api author
+ * A perceivable thing that cannot be touched. */
 class Intangible: Thing
     isFixed = true
     isDecoration = true
@@ -2222,6 +2382,8 @@ class Intangible: Thing
     }
 ;
 
+/** @api author
+ * A referable absence with a custom explanation. */
 class Unthing: Thing
     isFixed = true
     isDecoration = true
@@ -2230,11 +2392,15 @@ class Unthing: Thing
 ;
 
 /* Part of the furniture: mentioned in the room description, not listed. */
+/** @api author
+ * Fixed furniture or scenery within a location. */
 class Fixture: Thing
     isFixed = true
 ;
 
 /* Scenery you can look at but need not be told about. */
+/** @api author
+ * Scenery normally omitted from room listings. */
 class Decoration: Fixture
     isDecoration = true
 
@@ -2252,6 +2418,8 @@ class Decoration: Fixture
     }
 ;
 
+/** @api author
+ * A thing whose identity and placement are tied to another object. */
 class Component: Thing
     isFixed = true
 /* Part of its owner's description, not a separate line in the room. */
@@ -2277,6 +2445,8 @@ class Component: Thing
 
 Component template'name';
 
+/** @api author
+ * A component that can be attached to another entity. */
 class AttachableComponent: Component
     isDetachable = true
     isAttachable = true
@@ -2284,6 +2454,8 @@ class AttachableComponent: Component
 
 AttachableComponent template'name';
 
+/** @api author
+ * Scenery visible but outside ordinary reach. */
 class Distant: Decoration
     isDistant = true
 ;
@@ -2291,6 +2463,8 @@ class Distant: Decoration
 Distant template'name';
 
 /* Things rest on top of it rather than inside. */
+/** @api author
+ * A fixed surface on which things can rest. */
 class Surface: Fixture
     isContainer = true
     isOpenable = nil
@@ -2299,6 +2473,8 @@ class Surface: Fixture
 ;
 
 /* Holds things inside, and cannot be shut. */
+/** @api author
+ * A Thing whose contents participate in containment and capacity rules. */
 class Container: Thing
     isContainer = true
     isOpenable = nil
@@ -2306,18 +2482,24 @@ class Container: Thing
 ;
 
 /* A container with a lid. */
+/** @api author
+ * A container that can be opened and closed. */
 class OpenableContainer: Container
     isOpenable = true
     isOpen = nil
 ;
 
 /* One that can be locked shut, and needs the right key. */
+/** @api author
+ * An openable container with lock state. */
 class LockableContainer: OpenableContainer
     isLockable = true
     isLocked = true
 ;
 
 /* Things go behind it rather than in it. */
+/** @api author
+ * A thing that receives objects placed behind it. */
 class RearContainer: Thing
     isContainer = true
     isOpenable = nil
@@ -2326,11 +2508,15 @@ class RearContainer: Thing
     contentsListed = nil
 ;
 
+/** @api author
+ * An openable container with a distinct bulk policy. */
 class BagOfHolding: OpenableContainer
     isOpen = true
     bulkCapacity = 100
 ;
 
+/** @api author
+ * A subordinate physical part of another thing. */
 class SubComponent: Thing
     isFixed = true
     isContainer = true
@@ -2340,6 +2526,8 @@ class SubComponent: Thing
 
 SubComponent template'name';
 
+/** @api author
+ * A surface on which an actor may stand. */
 class Platform: Surface
     isEnterable = true
     objPos = posOn
@@ -2349,12 +2537,16 @@ class Platform: Surface
     enterDesc = nil
 ;
 
+/** @api author
+ * A thing that can answer consult actions. */
 class Consultable: Thing
     isConsultable = true
     consult(about, words) { return nil; }
 ;
 
 /* A space you sit inside rather than on: a booth, a cupboard, a cart. */
+/** @api author
+ * A container that an actor may enter. */
 class Booth: Container
     isEnterable = true
     isFixed = true
@@ -2365,11 +2557,15 @@ class Booth: Container
     defaultPosture = sitting
 ;
 
+/** @api author
+ * A platform supporting sitting posture. */
 class Chair: Platform
     allowedPostures = [sitting, standing]
     defaultPosture = sitting
 ;
 
+/** @api author
+ * A platform supporting lying posture. */
 class Bed: Platform
     allowedPostures = [lying, sitting, standing]
     defaultPosture = lying
@@ -2377,6 +2573,8 @@ class Bed: Platform
 
 /* ------------------------------------------------------- attachment, lists */
 
+/** @api author
+ * A thing that can attach to another entity. */
 class Attachable: Thing
     isAttachable = true
 /* What it will join to. nil means anything attachable. */
@@ -2385,6 +2583,8 @@ class Attachable: Thing
 
 Attachable template'name';
 
+/** @api author
+ * Cycles, stops or exhausts an authored list of values. */
 class EventList: object
     items = []
     at = 0
@@ -2409,6 +2609,8 @@ class EventList: object
     }
 ;
 
+/** @api author
+ * Tracks a condition-driven interval in the world. */
 class Scene: object
     isHappening = nil
     hasHappened = nil
@@ -2459,16 +2661,22 @@ runScenes()
 
 /* --------------------------------------------------------------- sensory */
 
+/** @api author
+ * A sensed phenomenon that can be present in multiple rooms. */
 class Sensed: MultiLoc
 /* Mentioned when the room is described, if it is worth mentioning. */
     isAmbient = true
     ambientDesc =""
 ;
 
+/** @api author
+ * A sound present in one or more rooms. */
 class Noise: Sensed
     sense ='hear'
 ;
 
+/** @api author
+ * A smell present in one or more rooms. */
 class Odour: Sensed
     sense ='smell'
 ;
@@ -2504,9 +2712,13 @@ travelActions: object
     conn = nil
 ;
 
+/** @api author
+ * A character that participates in travel, conversation and actor states. */
 class Actor: Thing
     travelCycle = -1
 
+    /** @api author
+     * Decide whether this actor may accompany a leader along this journey. */
     canAccompanyTravel(leader, conn, dest) { return true; }
 
     presentation = [&name, &isOpen, &isOpenable, &isContainer, &isLit,
@@ -2516,6 +2728,8 @@ class Actor: Thing
     isFixed = true
     isActor = true
 /* The state it is in, which decides what it says and does. */
+    /** @api author
+     * Current ActorState, selected by the library or setCurState. */
     curState = nil
 /* Said instead of desc while in a state that has its own. */
     desc = nil
@@ -2524,6 +2738,8 @@ class Actor: Thing
 
     posture = standing
 
+    /** @api author
+     * Change actor state, invoking deactivation and activation hooks. */
     setCurState(state)
     {
         if (state == curState)
@@ -2541,6 +2757,8 @@ class Actor: Thing
     }
 
 /* Background activity for an actor with no state of its own to run one. */
+    /** @api author
+     * Run background behaviour when the actor has no state turn hook. */
     idleTurn() { return nil; }
 
 /* Whether this actor will do as it is told. The state decides. */
@@ -2678,33 +2896,59 @@ class Actor: Thing
     }
 ;
 
+/** @api author
+ * Behaviour and presentation state associated with an Actor. */
 class ActorState: object
     presentation = [&actor, &accompanyingActor, &escortActor, &escortDest]
+    /** @api author
+     * Actor to which this state belongs. */
     actor = nil
     accompanyingActor = nil
     escortActor = nil
     escortDest = nil
 /* Mentioned when the actor is described. */
+    /** @api author
+     * Description emitted while the actor is in this state. */
     stateDesc =""
 /* Only these topics answer while in this state; nil means all of them. */
+    /** @api author
+     * Topics available in this state, or nil for all matching topics. */
     only = nil
 
+    /** @api author
+     * Prefer this state during initial state selection. */
     isInitState = nil
 
     specialDesc = nil
 /* Whether `specialDesc` says anything; an emitting property cannot be asked. */
     hasSpecialDesc = nil
 
+    /** @api author
+     * Decide whether this actor accepts an issued command. */
     obeyCommand(issuer, a) { return nil; }
 /* Reacting to what happens, with the state rather than with the actor. */
+    /** @api author
+     * React before a resolved action is performed. */
     beforeAction(c) { return nil; }
+    /** @api author
+     * React after a resolved action is performed. */
     afterAction(c) { return nil; }
+    /** @api author
+     * React before the actor travels. */
     beforeTravel(traveller, conn) { return nil; }
+    /** @api author
+     * React after the actor travels. */
     afterTravel(traveller, conn) { return nil; }
 /* Called as this state becomes, and stops being, the actor's. */
+    /** @api author
+     * Run when this state becomes active for the actor. */
     activateState(a, oldState) { return nil; }
+    /** @api author
+     * Run when this state stops being active for the actor. */
     deactivateState(a, newState) { return nil; }
 
+    /** @api author
+     * Run this state's background activity on a completed turn. */
     takeTurn() { return nil; }
 /* Whether this state takes the departure message over; see below. */
     saysDeparting = nil
@@ -2714,6 +2958,8 @@ class ActorState: object
     getAccompanyingTravelState(leadActor, conn) { return nil; }
 ;
 
+/** @api author
+ * An actor state that declines ordinary conversation. */
 class HermitActorState: ActorState
     noResponse = nil
 
@@ -2722,15 +2968,21 @@ class HermitActorState: ActorState
     only = []
 ;
 
+/** @api author
+ * An ActorState that follows an explicitly stored leader during travel. */
 class AccompanyingState: ActorState
 /* The stored leader is authoritative and inspectable. The hook may
      * decline a particular journey, but cannot choose a different leader. */
+    /** @api author
+     * Actor followed by this state's actor. */
     accompanyingActor = player
     accompanyTravel(leadActor, conn) { return true; }
 /* The state to wear for the journey itself. */
     getAccompanyingTravelState(leadActor, conn) { return nil; }
 ;
 
+/** @api author
+ * Temporary state used while an actor follows a leader through travel. */
 class AccompanyingInTravelState: ActorState
     saysDeparting = true
 /* Where to go back to once the journey is over. */
@@ -2743,6 +2995,8 @@ class AccompanyingInTravelState: ActorState
     }
 ;
 
+/** @api author
+ * An accompanying state that leads another actor toward a tour destination. */
 class GuidedTourState: AccompanyingState
     accompanyingActor = nil
     escortActor = player
@@ -2768,6 +3022,8 @@ class GuidedTourState: AccompanyingState
  * lighthouse — topics are entities, which the vocabulary already resolves.
  */
 
+/** @api author
+ * A vocabulary-resolved subject used by ask and tell dialogue. */
 class Topic: Thing
     isFamiliar = true
     isDecoration = true
@@ -2776,27 +3032,51 @@ class Topic: Thing
 
 /* And a Distant says *too far off*, which the reach check answers first. */
 
+/** @api author
+ * An ask or tell response matched to a topic and optionally an actor state. */
 class TopicEntry: object
+    /** @api author
+     * Actor who offers this topic response. */
     actor = nil
+    /** @api author
+     * Topic or object matched by this entry. */
     matchObj = nil
 /* Only offered while the actor is in this state; nil means always. */
+    /** @api author
+     * Restrict the entry to this actor state, or nil for any state. */
     inState = nil
+    /** @api author
+     * Match ask exchanges when true and tell exchanges otherwise. */
     isAsk = true
 
+    /** @api author
+     * Message id used for the response. */
     id = nil
 /* Or the words themselves, for a game that only ever runs in a terminal. */
+    /** @api author
+     * Literal response text for a terminal-only game. */
     reply = nil
 
+    /** @api author
+     * Advance a turn after delivering the topic response. */
     waits = nil
 
+    /** @api author
+     * Whether this entry currently participates in topic matching. */
     isActive = true
 /* Said once, then this entry steps aside for the next. */
+    /** @api author
+     * Retire this topic entry after its first accepted exchange. */
     once = nil
+    /** @api author
+     * Library-maintained record of whether this entry was accepted. */
     used = nil
 ;
 
 /* ----------------------------------------------------------------- states */
 
+/** @api author
+ * Synchronises vocabulary with an observed property condition. */
 class State: object
 /* Whose condition this is. */
     item = nil
@@ -2892,6 +3172,8 @@ syncStates()
     return nil;
 }
 
+/** @api author
+ * A scheduled item of actor behaviour. */
 class AgendaItem: Daemon
 /* Only runs while the actor is in this state. */
     inState = nil
@@ -2917,6 +3199,8 @@ class AgendaItem: Daemon
     }
 ;
 
+/** @api author
+ * An agenda item that accounts for conversation activity. */
 class ConvAgendaItem: AgendaItem
     isReady = (actor != nil && !actor.talkedThisTurn)
 ;
@@ -2966,6 +3250,8 @@ topicFor(actor, about, asking)
 
 /* ---------------------------------------------------------------- gadgets */
 
+/** @api author
+ * Base for manipulable controls such as switches and buttons. */
 class Gadget: Thing
     isFixed = true
 /* What turning, pushing or flipping it does. */
@@ -2973,6 +3259,8 @@ class Gadget: Thing
 ;
 
 /* On or off. */
+/** @api author
+ * A binary control operated by turn-on and turn-off actions. */
 class Switch: Gadget
 
     presentation = [&name, &isOpen, &isOpenable, &isContainer, &isLit,
@@ -2984,6 +3272,8 @@ class Switch: Gadget
 ;
 
 /* Up or down. */
+/** @api author
+ * A control with lever-specific action reporting. */
 class Lever: Gadget
 
     presentation = [&name, &isOpen, &isOpenable, &isContainer, &isLit,
@@ -2995,6 +3285,8 @@ class Lever: Gadget
 ;
 
 /* Set to one of several positions. */
+/** @api author
+ * A control whose setting can be changed by the player. */
 class Dial: Gadget
 
     presentation = [&name, &isOpen, &isOpenable, &isContainer, &isLit,
@@ -3007,6 +3299,8 @@ class Dial: Gadget
 ;
 
 /* Pressed, and does whatever it does. */
+/** @api author
+ * A control operated by pressing. */
 class Button: Gadget
     desc = nil
 ;
@@ -3018,6 +3312,8 @@ Lever template'name';
 Dial template'name';
 Button template'name';
 
+/** @api author
+ * A thing that can be eaten. */
 class Food: Thing
     isEdible = true
 ;
@@ -3025,6 +3321,8 @@ class Food: Thing
 Food template'name';
 
 /* Worn rather than merely carried. */
+/** @api author
+ * A thing that can be worn and removed. */
 class Wearable: Thing
 
     presentation = [&name, &isOpen, &isOpenable, &isContainer, &isLit,
@@ -3039,6 +3337,8 @@ class Wearable: Thing
  * Something you go into, which takes you somewhere. The oak you climb and the
  * chute you slide down are both this.
  */
+/** @api author
+ * A fixed object an actor can enter. */
 class Enterable: Fixture
     isEnterable = true
     destination = nil
@@ -3050,6 +3350,8 @@ class Enterable: Fixture
  * In several rooms at once. Its rows are in presentIn rather than contains,
  * because containment answers one container and this thing has no one room.
  */
+/** @api author
+ * A fixture present in multiple rooms through presentIn relation rows. */
 class MultiLoc: Fixture
     isMultiLoc = true
 
@@ -3612,32 +3914,54 @@ doPutIn(c, item, into)
 
 /* ----------------------------------------------------------------- events */
 
+/** @api author
+ * Schedules a property call on an owner after completed turns. */
 class Event: object
 /* Whose property is called when it fires, and which. */
+    /** @api author
+     * Object on which the event's property is called. */
     owner = nil
+    /** @api author
+     * Property reference called when the event fires. */
     prop = nil
 /* Turns until it fires. */
+    /** @api author
+     * Remaining completed turns before the next firing. */
     turnsLeft = 1
 /* 0 fires once and stops; n fires every n turns. */
+    /** @api author
+     * Number of turns between firings, or zero for a one-shot event. */
     interval = 0
+    /** @api author
+     * Whether this event participates in scheduling. */
     isActive = true
 /* Answered nil to skip a firing without stopping the event. */
+    /** @api author
+     * Observational condition that can skip a firing without stopping the event. */
     isDue = true
 ;
 
 /* Fires once. */
+/** @api author
+ * A one-shot scheduled event. */
 class Fuse: Event;
 
 /* Fires again and again. */
+/** @api author
+ * A scheduled event that repeats at its interval. */
 class Daemon: Event
     interval = 1
 ;
 
+/** @api author
+ * A recurring event conditioned on the player's location. */
 class SenseEvent: Daemon
     where = nil
     isDue { return where == nil || where == here(); }
 ;
 
+/** @api author
+ * An object whose execute hook runs during vhylStart. */
 class InitObject: object
     execute() { return nil; }
 ;
@@ -3760,12 +4084,22 @@ runEvents()
 
 /* ------------------------------------------------------------------ doers */
 
+/** @api author
+ * Redirects or customises a resolved action for selected objects. */
 class Doer: object
 /* The action this catches, and optionally the object it must be about. */
+    /** @api author
+     * Action this Doer intercepts, or nil for any action. */
     forAction = nil
+    /** @api author
+     * Indirect object this Doer requires, or nil for any object. */
     forIobj = nil
+    /** @api author
+     * Direct object this Doer requires, or nil for any object. */
     forDobj = nil
 /* The action to run instead. Answer nil to leave the command alone. */
+    /** @api author
+     * Replacement action, or nil to leave the command unchanged. */
     instead = nil
 /* Whether this Doer applies to the command in hand. */
     catches(c)
@@ -4280,6 +4614,8 @@ endedCommand()
     return nil;
 }
 
+/** @api host
+ * Submit parser tokens to the library's text command cycle. */
 vhylTurn(toks)
 {
     if (!gameOver.done)
@@ -4438,6 +4774,8 @@ runCommandOver(c, items)
 
 /* --------------------------------------------------------- preconditions */
 
+/** @api author
+ * Checks or establishes a requirement before an action executes. */
 class PreCondition: object
     met(item, a, c) { return true; }
     impliedVerb(item, a, c) { return nil; }
@@ -4758,6 +5096,8 @@ dialogueUI: object
     afterTurn() { return nil; }
 ;
 
+/** @api host
+ * Submit a structured verb code and entity arguments to the normal action cycle. */
 vhylAct(verb, subjects)
 {
     if (dialogueUI.accepts(verb))

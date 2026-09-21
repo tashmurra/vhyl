@@ -2,6 +2,8 @@
 
 This is the supported authoring surface used by the bundled examples and tests. Internal scratch objects and underscore-suffixed fields are not stable extension APIs. This experimental release does not promise compatibility with every TADS or adv3Lite class/property.
 
+The [library reference](../reference/README.md) indexes every declaration, including implementation symbols. Entries marked **author** or **host** describe supported interfaces; entries marked **internal** are included for source navigation.
+
 | Surface | Author sets or overrides | Library maintains |
 | --- | --- | --- |
 | `gameMain` | `initialRoom`, `intro`, `usePastTense` | Startup dispatch |
