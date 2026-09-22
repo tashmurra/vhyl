@@ -4,6 +4,15 @@
 
 [compiler.json](../compiler.json) records the tested compiler repository and immutable revision. CI checks out that revision into ignored `.tools`, builds `zebc`, and uses it through its CLI. To update compatibility, change the pin and rerun source and native checks together. Library and compiler versions need not advance together.
 
+The current pin is Zebulon [v0.1.1](https://github.com/tashmurra/zebulon-lang/releases/tag/v0.1.1), commit `ff10166608b7f3d782b39e3ee9b51744cbcf533e`.
+
+On macOS, LLVM and LLD may be installed separately. Select LLVM with `ZEB_LLVM_CONFIG` and the matching linker with `ZEB_LD64_LLD`; `ZEB_LLD` is a compatibility alias used when `ZEB_LD64_LLD` is unset. Without either override, Zebulon searches LLVM's bin directory, then PATH. Invalid selected overrides fail rather than falling back. Both LLVM and LLD must be version 22.1.8. For separate Homebrew kegs at that version:
+
+```sh
+export ZEB_LLVM_CONFIG="$(brew --prefix llvm@22)/bin/llvm-config"
+export ZEB_LD64_LLD="$(brew --prefix lld@22)/bin/ld64.lld"
+```
+
 Run the README commands. The test runner selects `--zebc`, then `ZEBC`, then PATH, without fallback after an invalid explicit selection. Native prerequisites follow the compiler's discovery settings. Tests share one temporary output/cache directory per run; no cache entry is committed. Existing output directories are refused.
 
 Source checks cover every complete example and fixture, host protocol validation and generated catalogue consistency. Native checks use independent expected outcomes for actions, scope, travel, scheduling, actor following, dialogue and persistence. The same suite runs on macOS Intel/Apple Silicon, Linux x86-64 and Windows x86-64. The independent inspection host uses the generated header and manifest, POSIX threads on Unix and a C runtime worker thread on Windows. Windows links the manifest-selected import libraries; Unix uses relative library-loading paths. Missing prerequisites fail the requested native run.

@@ -6,7 +6,7 @@ The library draws on TADS 3 and adv3Lite authoring concepts, but targets Zebulon
 
 ## Requirements
 
-- A `zebc` compiler built from the revision recorded in [compiler.json](compiler.json).
+- Zebulon [v0.1.1](https://github.com/tashmurra/zebulon-lang/releases/tag/v0.1.1), pinned to the immutable revision recorded in [compiler.json](compiler.json).
 - Python 3.10+ for the test runner and example host.
 - For native programs, the prerequisites documented by that compiler release. The library contains no compiler or runtime binaries.
 
