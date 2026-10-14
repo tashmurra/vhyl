@@ -33,6 +33,34 @@ class CompilerSelectionTests(unittest.TestCase):
             self.assertEqual(result.stdout.strip(), 'one argument with spaces')
 
 
+class SubprocessTests(unittest.TestCase):
+    def test_timeout_preserves_partial_diagnostics(self):
+        script = ("import os, sys, time; print('started', flush=True); "
+                  "os.write(sys.stderr.fileno(), b'detail \\x97'); time.sleep(30)")
+        with self.assertRaisesRegex(RuntimeError, 'timed out') as error:
+            support.run([sys.executable, '-u', '-c', script], timeout=1)
+        self.assertIn('started', str(error.exception))
+        self.assertIn(r'detail \x97', str(error.exception))
+
+    def test_non_utf8_diagnostics_are_drained_and_failures_still_fail(self):
+        # More than a pipe buffer: a decoding error must not strand the writer.
+        for code in (0, 7):
+            script = ("import os, sys; "
+                      "os.write(sys.stderr.fileno(), b'\\x97' * 262144); "
+                      "print('finished', flush=True); "
+                      f"sys.exit({code})")
+            with self.subTest(code=code):
+                if code:
+                    with self.assertRaisesRegex(RuntimeError, r'exited 7') as error:
+                        support.run([sys.executable, '-c', script], timeout=10)
+                    self.assertIn('finished', str(error.exception))
+                    self.assertIn(r'\x97', str(error.exception))
+                else:
+                    result = support.run([sys.executable, '-c', script], timeout=10)
+                    self.assertEqual(result.stdout.strip(), 'finished')
+                    self.assertEqual(result.stderr, r'\x97' * 262144)
+
+
 class NativeHostTests(unittest.TestCase):
     def test_supported_host_architectures(self):
         for system, machine in [('Darwin', 'x86_64'), ('Darwin', 'arm64'),

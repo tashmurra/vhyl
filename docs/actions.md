@@ -24,7 +24,7 @@ After a Doer chooses the effective action, the shared execution path runs verifi
 
 Implicit commands must pass both permissions for both roles. Each nested implicit command has its own temporary command object. Preconditions can perform implicit actions, so an execution-time refusal can occur after an implied action has changed the world. Refused attempts reaching the action cycle retain the existing one-turn scheduling policy; previews do not enter that cycle.
 
-`verifyAction(command)` exposes semantic verification to game code without preconditions or checks. Its results can contain puzzle secrets. Verification and ranking hooks must be observational: no output, mutations, knowledge changes or persistence. Zebulon v0.1.1 does not enforce that purity.
+`verifyAction(command)` exposes semantic verification to game code without preconditions or checks. Its results can contain puzzle secrets. Verification and ranking hooks must be observational: no output, mutations, knowledge changes or persistence. Zebulon v0.1.2 does not enforce that purity.
 
 ## Player-visible previews
 
