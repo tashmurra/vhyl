@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
+
+- Pin the compiler to Zebulon v0.1.2 for faster live-object enumeration, including object creation, destruction, Turn cleanup and restore. The compiler retains its save format.
+- Native prerequisites remain Rust 1.98.1 and LLVM/LLD 22.1.8.
+- No changes to vhyl library behaviour, authoring or host APIs, message IDs or verb codes.
+
+## 0.2.0
 
 - Add structured action verification and execution-only checks, preserving legacy ranking and `refuses` hooks.
 - Add optional `vhyl-actions.t` with authored, observational affordances and preview transport code 83. Preview purity is an author contract, covered by native mutation/history regressions, not enforced by the compiler.

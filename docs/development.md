@@ -4,7 +4,7 @@
 
 [compiler.json](../compiler.json) records the tested compiler repository and immutable revision. CI checks out that revision into ignored `.tools`, builds `zebc`, and uses it through its CLI. To update compatibility, change the pin and rerun source and native checks together. Library and compiler versions need not advance together.
 
-The current pin is Zebulon [v0.1.1](https://github.com/tashmurra/zebulon-lang/releases/tag/v0.1.1), commit `ff10166608b7f3d782b39e3ee9b51744cbcf533e`.
+The current pin is Zebulon [v0.1.2](https://github.com/tashmurra/zebulon-lang/releases/tag/v0.1.2), commit `089a6f1d2a55014d0e89bb78d35f82647fdcea61`.
 
 On macOS, LLVM and LLD may be installed separately. Select LLVM with `ZEB_LLVM_CONFIG` and the matching linker with `ZEB_LD64_LLD`; `ZEB_LLD` is a compatibility alias used when `ZEB_LD64_LLD` is unset. Without either override, Zebulon searches LLVM's bin directory, then PATH. Invalid selected overrides fail rather than falling back. Both LLVM and LLD must be version 22.1.8. For separate Homebrew kegs at that version:
 
