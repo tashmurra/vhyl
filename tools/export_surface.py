@@ -51,11 +51,15 @@ def messages() -> list[dict]:
 def verbs(text: str) -> list[dict]:
     """Every verb code, with how many entities its action takes."""
     subjects = {}
+    optional = {}
     for name, body in NEEDS.findall(text):
         subjects[name] = ("needsDobj = true" in body) + ("needsIobj = true" in body)
+        optional[name] = "optionalIobj = true" in body
     out = []
     for _, code, action, label, phrase in VERB.findall(text):
         entry = {"code": int(code), "label": label, "subjects": subjects.get(action, 0)}
+        if optional.get(action):
+            entry['optional_subjects'] = 1
         if phrase:
             entry["phrase"] = phrase
         out.append(entry)

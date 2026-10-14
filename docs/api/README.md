@@ -12,7 +12,9 @@ The [library reference](../reference/README.md) indexes every declaration, inclu
 | `Container` / `Door` | Open/locked properties and initial relation rows | State changes from actions |
 | `Thing.rank(action, role)` | Candidate rank | Candidate resolution |
 | `Thing.refuses(action, command)` | Nil or refusal text | Refusal dispatch |
-| `Action` | Argument requirements, `rank`, `preCond`, `exec`, `report` | Resolved command flow |
+| `Action` | Required/optional arguments, `rank`, `verify`, `check`, `preCond`, `exec`, `report` | Resolved command flow |
+| `ActionContext` / `VerificationResult` | Observational verification and execution-only denial hooks on actions and things | Role context, rank/permission aggregation |
+| `Action.affordance` / `ActionAffordance` | Player-safe visibility, labels, reasons and defaults (optional `vhyl-actions.t`) | Temporary previews and code 83 response framing |
 | `Verb` | Unique `code`, `action`, optional direction and label | Code lookup |
 | `Message` | Stable `id`, priority/activity, `text` or `say` | Active message selection |
 | `Actor` / `ActorState` | Initial state and behaviour hooks | Current state and turn scheduling |

@@ -4,7 +4,7 @@ These guides describe the library shipped with this repository. Documentation, f
 
 - [Getting started](getting-started.md): includes, entry points and examples.
 - [World model](world-model.md): entities, relations and state.
-- [Actions](actions.md): resolution, preconditions, refusals and reports.
+- [Actions](actions.md): verification, preconditions, checks, reports and safe previews.
 - [Actors and dialogue](actors-and-dialogue.md): behaviour and host-driven conversations.
 - [Localisation](localisation.md): messages, prose and parser limitations.
 - [Host integration](host-integration.md): identities, action codes and events.

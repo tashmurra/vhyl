@@ -176,6 +176,8 @@
     {"id": "score.is", "kind": "computed"},
     {"id": "score.gained", "kind": "computed"},
     {"id": "score.gained1", "kind": "text", "default": "[Your score has just gone up by 1 point.]"},
-    {"id": "dialogue.goodbye", "kind": "text", "default": "Say goodbye"}
+    {"id": "dialogue.goodbye", "kind": "text", "default": "Say goodbye"},
+    {"id": "action.denied", "kind": "text", "default": "That action is not allowed. "},
+    {"id": "act.arguments", "kind": "text", "default": "That action does not accept those arguments. "}
   ]
 }

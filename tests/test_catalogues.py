@@ -13,6 +13,15 @@ SPEC.loader.exec_module(exporter)
 
 
 class CatalogueTests(unittest.TestCase):
+    def test_optional_keys_preserve_required_argument_counts(self):
+        rows = exporter.verbs((ROOT/'lib/vhyl.t').read_text(encoding='utf-8'))
+        by_code = {row['code']: row for row in rows}
+        for code in (41, 42):
+            self.assertEqual(by_code[code]['subjects'], 1)
+            self.assertEqual(by_code[code]['optional_subjects'], 1)
+        self.assertEqual(by_code[51]['subjects'], 2)
+        self.assertNotIn('optional_subjects', by_code[51])
+
     def test_check_is_read_only_and_detects_drift(self):
         with tempfile.TemporaryDirectory(prefix='vhyl catalogue ') as name:
             root = Path(name)
