@@ -4,6 +4,7 @@
 
 - Pin the compiler to Zebulon v0.1.2 for faster live-object enumeration, including object creation, destruction, Turn cleanup and restore. The compiler retains its save format.
 - Native prerequisites remain Rust 1.98.1 and LLVM/LLD 22.1.8.
+- Preserve non-UTF-8 compiler diagnostics in the test harness so Windows pipe readers keep draining output; subprocess failures still fail the checks.
 - No changes to vhyl library behaviour, authoring or host APIs, message IDs or verb codes.
 
 ## 0.2.0

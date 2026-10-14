@@ -32,8 +32,11 @@ def select_compiler(argument=None, environment=None):
 
 
 def run(args, *, cwd=ROOT, timeout=300, **kwargs):
+    # Compiler/tool diagnostics can use a Windows code page. Keep draining both
+    # pipes and preserve undecodable bytes without relaxing host protocol reads.
     result = subprocess.run([str(x) for x in args], cwd=cwd, capture_output=True,
-                            text=True, encoding='utf-8', timeout=timeout, **kwargs)
+                            text=True, encoding='utf-8', errors='backslashreplace',
+                            timeout=timeout, **kwargs)
     if result.returncode:
         raise RuntimeError(f'{args[0]} exited {result.returncode}:\n{result.stdout[-16000:]}\n{result.stderr[-16000:]}')
     return result
