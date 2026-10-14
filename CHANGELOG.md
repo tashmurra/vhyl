@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Add structured action verification and execution-only checks, preserving legacy ranking and `refuses` hooks.
+- Add optional `vhyl-actions.t` with authored, observational affordances and preview transport code 83. Preview purity is an author contract, covered by native mutation/history regressions, not enforced by the compiler.
+- Resolve optional keys for both text and structured lock/unlock commands. Explicit wrong keys are no longer ignored. Publish optional argument counts and reject surplus or malformed structured arguments.
+- Keep nested implicit command state separate and honor verification permissions for both roles. Apply the topic scope exemption to structured direct topics too.
+- Add an original action-preview example and native coverage for disclosure, execution parity, implicit actions, refusals, undo and restore. Existing verb codes and message IDs are retained; two generic refusal IDs are added. The compiler pin remains v0.1.1.
+
 ## 0.1.1
 
 - Pin the compiler to Zebulon v0.1.1 for macOS linker discovery, full-LTO linking and universal-binary verification fixes.

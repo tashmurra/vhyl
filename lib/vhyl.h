@@ -60,6 +60,8 @@ enum dobjRole, iobjRole;
 
 #define TypeInt 7
 #define TypeSString 8
+#define TypeObject 5
+#define TypeList 10
 
 #define FirstPerson  1
 #define SecondPerson 2

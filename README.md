@@ -41,6 +41,8 @@ python3 examples/dialogue/host.py build/dialogue
 
 The host prints the available choices and the archivist's answer. It uses the generated consumer's public transport; it does not import Rust internals.
 
+`examples/actions/main.t` demonstrates optional action previews, authored defaults and explicit keys. Include `vhyl-actions.t` to offer player-safe affordances through structured code 83. See [Actions](docs/actions.md) for verification/check hooks and [Host integration](docs/host-integration.md) for the preview event schema. Queries leave gameplay and history unchanged when author hooks follow the observational contract.
+
 ## Checks
 
 ```sh

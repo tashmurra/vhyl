@@ -55,6 +55,14 @@ class Thing: object
      * Return a candidate rank for this thing in the given action and role. */
     rank(a, role) { return isDecoration ? rankUnlikely : rankLogical; }
 
+    /** @api author
+     * Observational verification; ranking does not by itself forbid an attempt. */
+    verify(c) { return rankedVerification(rank(c.action, c.role)); }
+
+    /** @api author
+     * Execution-only check: nil allows, a denied VerificationResult refuses. */
+    check(c) { return nil; }
+
     cannotTakeMsg = nil
     cannotOpenMsg = nil
 
@@ -944,6 +952,10 @@ class Action: object
     needsIobj = nil
 
     /** @api author
+     * Accept an indirect entity when supplied, without requiring one. */
+    optionalIobj = nil
+
+    /** @api author
      * Treat the indirect argument as a topic instead of an ordinary thing. */
     iobjIsTopic = nil
 
@@ -969,6 +981,17 @@ class Action: object
     /** @api author
      * Return an action-specific candidate rank for an argument and role. */
     rank(item, role) { return rankLogical; }
+
+    /** @api author
+     * Observational verification for each supplied role (nil for no arguments). */
+    verify(c)
+    {
+        return rankedVerification(c.item == nil ? rankLogical : rank(c.item, c.role));
+    }
+
+    /** @api author
+     * Execution-only check, after preconditions and before legacy refusals. */
+    check(c) { return nil; }
 
     /** @api author
      * Require the selected object to be reachable for this action. */
@@ -1022,6 +1045,128 @@ class Command: object
 
     topicText_ = nil
 ;
+
+/** @api author
+ * Temporary context shared by verification, execution checks and affordances.
+ * Hooks must not mutate this context or its command during verification. */
+class ActionContext: object
+    /** @api author
+     * Current player whose action is being evaluated. */
+    actor = nil
+    /** @api author
+     * Action being evaluated, after any execution-time Doer redirect. */
+    action = nil
+    /** @api author
+     * Direct entity, or nil when not supplied. */
+    dobj = nil
+    /** @api author
+     * Indirect entity, or nil when not supplied. */
+    iobj = nil
+    /** @api author
+     * dobjRole, iobjRole, or nil for action checks and affordances. */
+    role = nil
+    /** @api author
+     * Entity occupying the role being verified or checked. */
+    item = nil
+    /** @api author
+     * Underlying Command; observational hooks must not mutate it. */
+    commandArgs = nil
+    construct(c, r)
+    {
+        actor = player; action = c.action; dobj = c.dobj; iobj = c.iobj;
+        commandArgs = c; role = r;
+        item = r == dobjRole ? dobj : r == iobjRole ? iobj : nil;
+    }
+;
+
+/** @api author
+ * Independent ranking, explicit permission, implicit permission and explanation.
+ * reasonArgs holds zero to two entities, in message direct/indirect order. */
+class VerificationResult: object
+    /** @api author
+     * Candidate preference, independent of permission. */
+    rank = rankLogical
+    /** @api author
+     * Whether the player may explicitly attempt the action. */
+    allowed = true
+    /** @api author
+     * Whether this action may run as an implicit prerequisite. */
+    implicitAllowed = true
+    /** @api author
+     * Message ID explaining a denied attempt, or nil for the generic refusal. */
+    reasonId = nil
+    /** @api author
+     * Zero to two message entities in direct/indirect order. */
+    reasonArgs = []
+;
+
+/** @api author
+ * Adapt a legacy rank without turning a poor rank into an explicit refusal. */
+rankedVerification(score)
+{
+    local r = new VerificationResult();
+    r.rank = score; r.implicitAllowed = score >= rankImplicit;
+    return r;
+}
+
+/** @api author
+ * Deny an attempt with a message ID and direct/indirect explanation entities. */
+verificationFailure(id, dobj, iobj)
+{
+    local r = new VerificationResult();
+    r.allowed = nil; r.implicitAllowed = nil;
+    r.reasonId = id; r.reasonArgs = [dobj, iobj];
+    return r;
+}
+
+mergeVerification(result, next)
+{
+    if (next == nil) return result;
+    if (next.rank < result.rank) result.rank = next.rank;
+    if (result.allowed && !next.allowed)
+    {
+        result.reasonId = next.reasonId; result.reasonArgs = next.reasonArgs;
+    }
+    result.allowed = result.allowed && next.allowed;
+    result.implicitAllowed = result.implicitAllowed && next.implicitAllowed;
+    return result;
+}
+
+verifyRole(c, role)
+{
+    local context = new ActionContext(c, role);
+    local result = c.action.verify(context);
+    if (result == nil) result = new VerificationResult();
+    /* Always copy: authored results may be durable declarations. */
+    local combined = new VerificationResult();
+    combined.rank = result.rank;
+    mergeVerification(combined, result);
+    if (context.item != nil) mergeVerification(combined, context.item.verify(context));
+    return combined;
+}
+
+/** @api author
+ * Observe verification for a resolved command; does not check or establish prerequisites.
+ * This is semantic information, not permission to disclose it in a menu. */
+verifyAction(c)
+{
+    if (c.dobj == nil) return verifyRole(c, c.iobj == nil ? nil : iobjRole);
+    local r = verifyRole(c, dobjRole);
+    if (c.iobj != nil) mergeVerification(r, verifyRole(c, iobjRole));
+    return r;
+}
+
+refuseVerification(c, r)
+{
+    if (r == nil || r.allowed) return nil;
+    c.failed_ = true;
+    local args = r.reasonArgs;
+    sayFor(r.reasonId == nil ? 'action.denied' : r.reasonId,
+           args.length() > 0 ? args[1] : c.dobj,
+           args.length() > 1 ? args[2] : c.iobj);
+    "\n";
+    return true;
+}
 
 /* ------------------------------------------------------------- reporting */
 
@@ -1819,26 +1964,25 @@ showAction: Action
 unlockAction: Action
     preCond(item, role) { return role == dobjRole ? [touchObj] : [objHeld]; }
     needsDobj = true
-    rank(item, role) { return item.isLockable ? rankLogical : rankIllogical; }
+    optionalIobj = true
+    rank(item, role) { return role == iobjRole || item.isLockable ? rankLogical : rankIllogical; }
+    check(context)
+    {
+        local c = context.commandArgs;
+        local it = c.dobj;
+        if (!it.isLockable)
+            return verificationFailure('lock.cannot', it, nil);
+        if (!it.isLocked)
+            return verificationFailure('unlock.already', it, nil);
+        local key = c.iobj != nil ? c.iobj : it.keyItem;
+        if (it.keyItem == nil || key != it.keyItem || !carried(key))
+            return verificationFailure('unlock.wrongkey', it, c.iobj);
+        return nil;
+    }
     exec(c)
     {
         local it = c.dobj;
-        if (!it.isLockable)
-        {
-            sayFor('lock.cannot', it, nil);"\n";
-            return nil;
-        }
-        if (!it.isLocked)
-        {
-            sayFor('unlock.already', it, nil);"\n";
-            return nil;
-        }
         local key = c.iobj != nil ? c.iobj : it.keyItem;
-        if (it.keyItem == nil || key != it.keyItem || !carried(key))
-        {
-            sayFor('unlock.wrongkey', it, c.iobj);"\n";
-            return nil;
-        }
         it.isLocked = nil;
         c.iobj = key;
         noteDone(c, it);
@@ -1850,26 +1994,25 @@ unlockAction: Action
 lockAction: Action
     preCond(item, role) { return role == dobjRole ? [touchObj, objClosed] : [objHeld]; }
     needsDobj = true
-    rank(item, role) { return item.isLockable ? rankLogical : rankIllogical; }
+    optionalIobj = true
+    rank(item, role) { return role == iobjRole || item.isLockable ? rankLogical : rankIllogical; }
+    check(context)
+    {
+        local c = context.commandArgs;
+        local it = c.dobj;
+        if (!it.isLockable)
+            return verificationFailure('lock.cannot', it, nil);
+        if (it.isLocked)
+            return verificationFailure('lock.already', it, nil);
+        local key = c.iobj != nil ? c.iobj : it.keyItem;
+        if (it.keyItem == nil || key != it.keyItem || !carried(key))
+            return verificationFailure('unlock.wrongkey', it, c.iobj);
+        return nil;
+    }
     exec(c)
     {
         local it = c.dobj;
-        if (!it.isLockable)
-        {
-            sayFor('lock.cannot', it, nil);"\n";
-            return nil;
-        }
-        if (it.isLocked)
-        {
-            sayFor('lock.already', it, nil);"\n";
-            return nil;
-        }
         local key = c.iobj != nil ? c.iobj : it.keyItem;
-        if (it.keyItem == nil || key != it.keyItem || !carried(key))
-        {
-            sayFor('unlock.wrongkey', it, c.iobj);"\n";
-            return nil;
-        }
         it.isOpen = nil;
         it.isLocked = true;
         c.iobj = key;
@@ -4499,9 +4642,11 @@ firstNamed(candidates)
 
 rankOf(item, a, role)
 {
-    local byAction = a.rank(item, role);
-    local byThing = item.rank(a, role);
-    return byAction < byThing ? byAction : byThing;
+    local c = new Command(); c.action = a;
+    if (role == dobjRole) c.dobj = item;
+    else c.iobj = item;
+    local r = verifyRole(c, role);
+    return r.allowed ? r.rank : rankNever;
 }
 
 chooseOne(candidates, a, role)
@@ -4688,7 +4833,7 @@ vhylTurn(toks)
                 }
                 named = named + [one];
             }
-            if (a.needsIobj)
+            if (a.needsIobj || (a.optionalIobj && c.iobj_ != nil))
             {
                 c.iobj = a.iobjIsTopic ? firstNamed(phraseCandidates(c.iobj_))
                     : chooseOne(phraseCandidates(c.iobj_), a, iobjRole);
@@ -4723,6 +4868,16 @@ vhylTurn(toks)
 "\n";
                 return nil;
             }
+            if (a.needsIobj || (a.optionalIobj && c.iobj_ != nil))
+            {
+                c.iobj = a.iobjIsTopic ? firstNamed(phraseCandidates(c.iobj_))
+                    : chooseOne(phraseCandidates(c.iobj_), a, iobjRole);
+                if (c.iobj == nil)
+                {
+                    sayMsg(a.missingIobjMsg, c); "\n";
+                    return nil;
+                }
+            }
             return runCommandOver(c, wanted);
         }
         c.dobj = a.dobjIsTopic ? firstNamed(candidates)
@@ -4734,7 +4889,7 @@ vhylTurn(toks)
             return nil;
         }
     }
-    if (a.needsIobj)
+    if (a.needsIobj || (a.optionalIobj && c.iobj_ != nil))
     {
         c.iobj = a.iobjIsTopic
             ? firstNamed(phraseCandidates(c.iobj_))
@@ -4785,18 +4940,14 @@ class PreCondition: object
     failMsg ='precond.cannot'
 ;
 
-/* The command an implied action runs in, so the outer one is not disturbed. */
-impliedArgs: Command;
-
 tryImplied(verb, item, into, outer)
 {
     local v = verbFor(verb);
     if (v == nil)
         return 0;
 
-    if (rankOf(item, v.action, dobjRole) < rankImplicit)
-        return 0;
-    local c = impliedArgs;
+    /* A separate Turn object at every nesting level preserves the outer action. */
+    local c = new Command();
     c.action = v.action;
     c.dobj = item;
     c.iobj = into;
@@ -4811,6 +4962,8 @@ tryImplied(verb, item, into, outer)
     c.failed_ = nil;
 
     c.implied_ = true;
+    local verification = verifyAction(c);
+    if (!verification.allowed || !verification.implicitAllowed) return 0;
 /*
      * `sayAbout` rather than `sayFor`, because the gerund is a **word** the
      * message needs and `sayFor` carries only entities.
@@ -4954,7 +5107,7 @@ replaceAction(verb, item, other)
     local v = verbFor(verb);
     if (v == nil)
         return nil;
-    local c = impliedArgs;
+    local c = new Command();
     c.action = v.action;
     c.dobj = item;
     c.iobj = other;
@@ -4986,6 +5139,14 @@ actOnce(c, a, item)
         c.action = a;
     }
 
+    local verification = verifyAction(c);
+    if (refuseVerification(c, verification)) return a;
+    if (c.implied_ && !verification.implicitAllowed)
+    {
+        c.failed_ = true;
+        return a;
+    }
+
     if (a.needsReach)
     {
 
@@ -5014,6 +5175,11 @@ actOnce(c, a, item)
         return a;
     if (!meetPreConds(c, a, a.iobjIsTopic ? nil : c.iobj, iobjRole))
         return a;
+    if (refuseVerification(c, a.check(new ActionContext(c, nil)))) return a;
+    if (c.dobj != nil
+        && refuseVerification(c, c.dobj.check(new ActionContext(c, dobjRole)))) return a;
+    if (c.iobj != nil
+        && refuseVerification(c, c.iobj.check(new ActionContext(c, iobjRole)))) return a;
     if (c.dobj != nil)
     {
         local no = c.dobj.refuses(a, c);
@@ -5096,10 +5262,35 @@ dialogueUI: object
     afterTurn() { return nil; }
 ;
 
+/* Optional action-preview transport, independent of the dialogue module. */
+actionUI: object
+    accepts(verb) { return nil; }
+    act(verb, args) { return nil; }
+;
+
+/* Shared structural validation. Nil slots are valid only for incomplete previews. */
+validActionSubjects(a, subjects)
+{
+    if (subjects != nil && dataType(subjects) != TypeList) return nil;
+    local n = subjects == nil ? 0 : subjects.length();
+    local maximum = a.needsIobj || a.optionalIobj ? 2 : a.needsDobj ? 1 : 0;
+    if (n > maximum) return nil;
+    for (local i = 1; i <= n; ++i)
+    {
+        local item = subjects[i];
+        if (item == nil) continue;
+        if (dataType(item) != TypeObject) return nil;
+        if (!item.ofKind(Thing)) return nil;
+    }
+    return true;
+}
+
 /** @api host
  * Submit a structured verb code and entity arguments to the normal action cycle. */
 vhylAct(verb, subjects)
 {
+    if (actionUI.accepts(verb))
+        return actionUI.act(verb, subjects);
     if (dialogueUI.accepts(verb))
         return dialogueUI.act(verb, subjects);
     if (!gameOver.done)
@@ -5121,6 +5312,11 @@ vhylAct(verb, subjects)
     local a = v.action;
     if (a == undoAction)
         return undoAction.exec(nil);
+    if (!validActionSubjects(a, subjects))
+    {
+        sayMsg('act.arguments', nil); "\n";
+        return nil;
+    }
     c.action = a;
     c.dobj_ = nil;
     c.iobj_ = nil;
@@ -5132,7 +5328,7 @@ vhylAct(verb, subjects)
     local count = subjects == nil ? 0 : subjects.length();
     if (a.needsDobj)
     {
-        if (count < 1)
+        if (count < 1 || subjects[1] == nil)
         {
             sayMsg(a.missingDobjMsg, c);
 "\n";
@@ -5140,9 +5336,9 @@ vhylAct(verb, subjects)
         }
         c.dobj = subjects[1];
     }
-    if (a.needsIobj)
+    if (a.needsIobj || (a.optionalIobj && count >= 2))
     {
-        if (count < 2)
+        if (count < 2 || subjects[2] == nil)
         {
             sayMsg(a.missingIobjMsg, c);
 "\n";
@@ -5155,7 +5351,7 @@ vhylAct(verb, subjects)
      * exempt: you can ask about a wreck on the shore below without it being to
      * hand, which is the same exemption the parser makes.
      */
-    if (c.dobj != nil && !inScope(c.dobj))
+    if (c.dobj != nil && !a.dobjIsTopic && !inScope(c.dobj))
     {
         sayFor('act.outofreach', c.dobj, nil);
 "\n";

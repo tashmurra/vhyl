@@ -40,10 +40,11 @@ def main():
             build.check(source)
         print(f'{len(sources)} complete source programs checked', flush=True)
         if args.native:
-            import following, dialogue, scenarios
+            import following, dialogue, scenarios, action_preview
             scenarios.test(build)
             following.test(build)
             dialogue.test(build)
+            action_preview.test(build)
             print(f'Native suite passed on {platform.system()} {platform.machine()}', flush=True)
         print('All requested checks passed', flush=True)
     except BaseException:

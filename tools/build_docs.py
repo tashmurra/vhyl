@@ -20,7 +20,7 @@ from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCES = ("vhyl.h", "vhyl.t", "vhyl-en.t", "vhyl-dialogue.t")
+SOURCES = ("vhyl.h", "vhyl.t", "vhyl-en.t", "vhyl-dialogue.t", "vhyl-actions.t")
 STAGE = ROOT / "build" / "docs-src"
 SITE = ROOT / "build" / "site"
 SUPPORTED_SYMBOLS = {

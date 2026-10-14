@@ -53,6 +53,8 @@ grammar command(example): 'look' : Command;
         self.assertEqual(by_name["vhylAct"].audience, "host")
         self.assertEqual(by_name["Conversation"].parent, "object")
         self.assertIn("dialogueVoice", by_name)
+        self.assertEqual(by_name['previewAction'].audience, 'host')
+        self.assertEqual(by_name['ActionAffordance'].audience, 'author')
         self.assertTrue(any(s.kind == "grammar" for s in symbols))
         self.assertEqual(next(m.signature for m in by_name["Thing"].members if m.name == "bulk"), "bulk = 1")
 

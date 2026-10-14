@@ -1146,3 +1146,6 @@ enScoreGained1:   Message id ='score.gained1'  text ='[Your score has just gone 
 
 /* Optional dialogue module's ordinary exit label. */
 enDialogueGoodbye: Message id ='dialogue.goodbye' text ='Say goodbye';
+
+enActionDenied: Message id ='action.denied' text ='That action is not allowed. ';
+enActionArguments: Message id ='act.arguments' text ='That action does not accept those arguments. ';
