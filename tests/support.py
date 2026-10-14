@@ -34,9 +34,17 @@ def select_compiler(argument=None, environment=None):
 def run(args, *, cwd=ROOT, timeout=300, **kwargs):
     # Compiler/tool diagnostics can use a Windows code page. Keep draining both
     # pipes and preserve undecodable bytes without relaxing host protocol reads.
-    result = subprocess.run([str(x) for x in args], cwd=cwd, capture_output=True,
-                            text=True, encoding='utf-8', errors='backslashreplace',
-                            timeout=timeout, **kwargs)
+    try:
+        result = subprocess.run([str(x) for x in args], cwd=cwd, capture_output=True,
+                                text=True, encoding='utf-8', errors='backslashreplace',
+                                timeout=timeout, **kwargs)
+    except subprocess.TimeoutExpired as error:
+        def diagnostic(value):
+            if isinstance(value, bytes):
+                value = value.decode('utf-8', errors='backslashreplace')
+            return (value or '')[-16000:]
+        raise RuntimeError(f'{args[0]} timed out after {timeout} seconds:\n'
+                           f'{diagnostic(error.stdout)}\n{diagnostic(error.stderr)}') from error
     if result.returncode:
         raise RuntimeError(f'{args[0]} exited {result.returncode}:\n{result.stdout[-16000:]}\n{result.stderr[-16000:]}')
     return result
@@ -128,7 +136,8 @@ class Build:
         bundle = self.out / name
         answer = run([self.compiler, 'build', source, '--include-dir', ROOT/'lib',
                       '--include-dir', source.parent, '--emit', 'shared', '--opt', 'O2',
-                      '--out-dir', bundle, '--runtime-cache', self.cache], cwd=self.out)
+                      '--out-dir', bundle, '--runtime-cache', self.cache],
+                     cwd=self.out, timeout=900)
         (self.out / (name + '.log')).write_text(answer.stdout + answer.stderr, encoding='utf-8')
         return bundle
 

@@ -34,6 +34,14 @@ class CompilerSelectionTests(unittest.TestCase):
 
 
 class SubprocessTests(unittest.TestCase):
+    def test_timeout_preserves_partial_diagnostics(self):
+        script = ("import os, sys, time; print('started', flush=True); "
+                  "os.write(sys.stderr.fileno(), b'detail \\x97'); time.sleep(30)")
+        with self.assertRaisesRegex(RuntimeError, 'timed out') as error:
+            support.run([sys.executable, '-u', '-c', script], timeout=1)
+        self.assertIn('started', str(error.exception))
+        self.assertIn(r'detail \x97', str(error.exception))
+
     def test_non_utf8_diagnostics_are_drained_and_failures_still_fail(self):
         # More than a pipe buffer: a decoding error must not strand the writer.
         for code in (0, 7):
